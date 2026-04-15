@@ -100,8 +100,30 @@ class SecureDocuments
         <?php
     }
 
-    public function generate_link(): void
-    {
+    public function generate_link(): void {
+        $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
+
+        if (!check_ajax_referer('secure_doc_nonce_' . $post_id, 'security', false)) {
+            wp_send_json_error('Помилка перевірки безпеки', 403);
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            wp_send_json_error('У вас немає прав', 403);
+        }
+
+        $expires = time() + 3600;
+
+        $token = hash_hmac('sha256', $post_id . '|' . $expires, wp_salt());
+
+        $url = add_query_arg([
+            'view_doc' => $post_id,
+            'token'    => $token,
+            'expires'  => $expires
+        ], home_url('/'));
+
+        update_post_meta($post_id, '_secure_doc_link', esc_url_raw($url));
+
+        wp_send_json_success(['url' => esc_url($url)]);
     }
 
     public function handle_access(): void
