@@ -16,8 +16,23 @@ class SecureDocuments
         add_action('template_redirect', [$this, 'handle_access']);
     }
 
-    public function register_cpt(): void
-    {
+    public function register_cpt(): void {
+        register_post_type('shared_document', [
+            'label' => 'Документи',
+            'labels' => [
+                'name' => 'Документи',
+                'singular_name' => 'Документ',
+                'add_new' => 'Додати документ',
+                'add_new_item' => 'Додати новий документ',
+                'edit_item' => 'Редагувати документ'
+            ],
+            'public' => false,
+            'has_archive' => false,
+            'publicly_queryable' => false,
+            'show_ui' => true,
+            'show_in_menu' => true,
+            'supports' => ['title', 'editor']
+        ]);
     }
 
     public function add_meta_box(): void
