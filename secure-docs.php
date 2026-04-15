@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Plugin Name: Secure Documents
+ * Description: Система тимчасового доступу до документів за спеціальним токеном.
+ * Version:     1.1.0
+ * Requires PHP: 8.2
+ * Author:      Danyil Kravchuk
+ */
+
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) {
