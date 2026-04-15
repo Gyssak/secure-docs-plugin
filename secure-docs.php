@@ -126,8 +126,57 @@ class SecureDocuments
         wp_send_json_success(['url' => esc_url($url)]);
     }
 
-    public function handle_access(): void
-    {
+    public function handle_access(): void {
+        if (!isset($_GET['view_doc'])) {
+            return;
+        }
+
+        $post_id = absint($_GET['view_doc']);
+        $token = sanitize_text_field($_GET['token'] ?? '');
+        $expires = absint($_GET['expires'] ?? 0);
+
+        if (time() > $expires) {
+            wp_die('Час дії минув.', 'Помилка', ['response' => 403]);
+        }
+
+        $expected_token = hash_hmac('sha256', $post_id . '|' . $expires, wp_salt());
+
+        if (!hash_equals($expected_token, $token)) {
+            wp_die('Недійсний токен.', 'Помилка', ['response' => 403]);
+        }
+
+        $post = get_post($post_id);
+
+        if (!$post || $post->post_type !== 'shared_document' || $post->post_status !== 'publish') {
+            wp_die('Документ не знайдено.', 'Помилка', ['response' => 404]);
+        }
+
+        $this->render_document_template($post);
+        exit;
+    }
+
+    private function render_document_template(WP_Post $post): void {
+        ?>
+        <!DOCTYPE html>
+        <html lang="uk">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title><?php echo esc_html($post->post_title); ?></title>
+            <style>
+                body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+                h1 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+                .document-content { background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px solid #eaeaea; }
+            </style>
+        </head>
+        <body>
+        <h1><?php echo esc_html($post->post_title); ?></h1>
+        <div class="document-content">
+            <?php echo apply_filters('the_content', $post->post_content); ?>
+        </div>
+        </body>
+        </html>
+        <?php
     }
 }
 
